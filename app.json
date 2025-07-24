@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.xuccessful.sanus"
     },
     "web": {
       "bundler": "metro",
@@ -46,7 +47,10 @@
     },
     "extra": {
       "router": {},
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "2efc2222-f6cb-41b4-9c52-e0532f6e4452"
+      }
+    },
+    "owner": "xuccessful"
   }
 }

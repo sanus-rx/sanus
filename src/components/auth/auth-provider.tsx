@@ -1,8 +1,8 @@
-import { createContext, type PropsWithChildren, use, useMemo } from 'react'
-import { useMobileWallet } from '@/components/solana/use-mobile-wallet'
-import { AppConfig } from '@/constants/app-config'
 import { Account, useAuthorization } from '@/components/solana/use-authorization'
+import { useMobileWallet } from '@/components/solana/use-mobile-wallet'
+import { AppConfig } from '@/src/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
+import { createContext, type PropsWithChildren, use, useMemo } from 'react'
 
 export interface AuthState {
   isAuthenticated: boolean

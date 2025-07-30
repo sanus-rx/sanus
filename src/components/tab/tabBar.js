@@ -1,26 +1,27 @@
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-paper';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/color';
 import TabBarButton from './tabButton';
 
 
 
 const TabBar = ({ state, descriptors, navigation }) => {
 
-   const { colors } = useTheme();
+   
    const insets = useSafeAreaInsets();
 
 
-    const primaryColor = colors.primary;
+    const primaryColor = Colors.dark.primary;
     const greyColor = '#737373';
     const styles = StyleSheet.create({
     tabbar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: colors.background,
+        backgroundColor: "#000000",
         marginHorizontal: 0,
-        paddingVertical: 15,
+        paddingVertical: 20,
         borderRadius: 0,
         borderCurve: 'continuous',
         shadowColor: 'black',
@@ -77,30 +78,7 @@ const TabBar = ({ state, descriptors, navigation }) => {
           />
         )
 
-        // return (
-        //   <TouchableOpacity
-        //     key={route.name}
-        //     style={styles.tabbarItem}
-        //     accessibilityRole="button"
-        //     accessibilityState={isFocused ? { selected: true } : {}}
-        //     accessibilityLabel={options.tabBarAccessibilityLabel}
-        //     testID={options.tabBarTestID}
-        //     onPress={onPress}
-        //     onLongPress={onLongPress}
-        //   >
-        //     {
-        //         icons[route.name]({
-        //             color: isFocused? primaryColor: greyColor
-        //         })
-        //     }
-        //     <Text style={{ 
-        //         color: isFocused ? primaryColor : greyColor,
-        //         fontSize: 11
-        //     }}>
-        //       {label}
-        //     </Text>
-        //   </TouchableOpacity>
-        // );
+       
       })}
     </View>
   )

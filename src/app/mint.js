@@ -1,5 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+import { clusterApiUrl, Connection } from '@solana/web3.js';
+import bs58 from 'bs58';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -7,374 +10,572 @@ import {
   Alert,
   Dimensions,
   Modal,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useTheme } from 'react-native-paper';
-
-// Mobile Wallet Adapter imports
-import {
-  transact
-} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
-import { findMintAddress } from '../components/solanaUtils';
+import { Colors } from '../constants/color';
 
 const { width } = Dimensions.get('window');
 
-const MintScreen = () => {
-  const { colors: color } = useTheme();
-  const params = useLocalSearchParams();
-  const { qrData, scanType, timestamp, imageUri } = params; // Assuming imageUri is passed as a param
 
-  // State management
-  const [modalVisible, setModalVisible] = useState(false);
+const storeWalletData = async (authToken, walletAddress) => {
+  try {
+    await AsyncStorage.setItem('authToken', authToken);
+    await AsyncStorage.setItem('walletAddress', walletAddress);
+    return true;
+  } catch (error) {
+    console.error('Error storing wallet data:', error);
+    return false;
+  }
+};
+
+const getStoredWalletData = async () => {
+  try {
+    const authToken = await AsyncStorage.getItem('authToken');
+    const walletAddress = await AsyncStorage.getItem('walletAddress');
+    return { authToken, walletAddress };
+  } catch (error) {
+    console.error('Error retrieving wallet data:', error);
+    return { authToken: null, walletAddress: null };
+  }
+};
+
+const clearStoredWalletData = async () => {
+  try {
+    await AsyncStorage.multiRemove(['authToken', 'walletAddress']);
+  } catch (error) {
+    console.error('Error clearing wallet data:', error);
+  }
+};
+
+export default function MintScreen() {
+  const params = useLocalSearchParams();
+  const { qrData, scanType, timestamp } = params;
+
+ 
   const [isConnecting, setIsConnecting] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [connection, setConnection] = useState(null);
-  const [authorization, setAuthorization] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Initialize Solana connection
-    const solanaConnection = new Connection(clusterApiUrl('devnet'));
-    setConnection(solanaConnection);
+    initializeApp();
+  }, []);
 
-    // Check for stored data on component mount
-    const checkStoredData = async () => {
-      try {
-        const storedAuth = await AsyncStorage.getItem('authorization');
-        const storedWalletAddress = await AsyncStorage.getItem('walletPublicKey');
-        const storedImageUri = await AsyncStorage.getItem('imageUri');
-
-        if (storedAuth && storedWalletAddress && storedImageUri) {
-          setAuthorization(JSON.parse(storedAuth));
-          setWalletAddress(storedWalletAddress);
-          setWalletConnected(true);
-          console.log('Retrieved data from AsyncStorage:', {
-            authorization: JSON.parse(storedAuth),
-            walletAddress: storedWalletAddress,
-          });
-          // If data exists, proceed to find the mint address
-          if (qrData && connection) {
-            findMintAddress(new PublicKey(qrData), connection);
-          }
-        } else {
-          // If no data, show the connection modal
-          setModalVisible(true);
-        }
-      } catch (error) {
-        console.error('Failed to retrieve data from AsyncStorage', error);
-        setModalVisible(true);
-      }
-    };
-
-    checkStoredData();
-  }, [qrData, connection]);
-
-  // Connect to Solana wallet using Mobile Wallet Adapter
-  const connectWallet = async () => {
+  const initializeApp = async () => {
     try {
-      setIsConnecting(true);
+      
+      const conn = new Connection(clusterApiUrl('devnet'));
+      setConnection(conn);
 
-      // Use Mobile Wallet Adapter to connect
+      const { authToken, walletAddress } = await getStoredWalletData();
+      
+      if (authToken && walletAddress) {
+        setWalletAddress(walletAddress);
+        await processVerification(walletAddress);
+      } else {
+       
+        setShowWalletModal(true);
+      }
+    } catch (error) {
+      console.error('Error initializing app:', error);
+      setError('Failed to initialize application');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
+  const base64ToBase58 = (base64) => {
+    try {
+      const binary = Buffer.from(base64, 'base64');
+      return bs58.encode(binary);
+    } catch (error) {
+      console.error('Error converting base64 to base58:', error);
+      throw new Error('Invalid address format');
+    }
+  };
+
+  const connectWallet = async () => {
+    if (isConnecting) return; 
+    
+    setIsConnecting(true);
+    setError(null);
+
+    try {
       await transact(async (wallet) => {
-        // Request authorization from the wallet
-        const authorizationResult = await wallet.authorize({
+        const auth = await wallet.authorize({
           cluster: 'devnet',
-          identity: {
-            name: 'Sanus Medicine Verification',
-          },
+          identity: { name: 'Sanus Medicine Verification' },
         });
 
-        const walletPublicKey = authorizationResult.accounts[0].address;
-
-        // Store data in AsyncStorage
-        await AsyncStorage.setItem('authorization', JSON.stringify(authorizationResult));
-        await AsyncStorage.setItem('walletPublicKey', walletPublicKey);
-        if (imageUri) {
-          await AsyncStorage.setItem('imageUri', imageUri);
+        if (!auth.accounts || auth.accounts.length === 0) {
+          throw new Error('No accounts found in wallet');
         }
 
-        setAuthorization(authorizationResult);
-        setWalletAddress(walletPublicKey);
-        setWalletConnected(true);
-        setModalVisible(false);
+        const address = base64ToBase58(auth.accounts[0].address.toString());
+        
+       
+        const stored = await storeWalletData(auth.auth_token, address);
+        if (!stored) {
+          throw new Error('Failed to store wallet data');
+        }
 
-        Alert.alert(
-          'Wallet Connected!',
-          `Successfully connected to wallet:\n${walletPublicKey.slice(0, 8)}...${walletPublicKey.slice(-8)}`,
-          [{ text: 'Continue', onPress: () => {
-            if (qrData && connection) {
-              findMintAddress(new PublicKey(qrData), connection);
-            }
-          } }]
-        );
+        setWalletAddress(address);
+        setShowWalletModal(false);
+        
+        
+        await processVerification(address);
       });
-
     } catch (error) {
       console.error('Wallet connection error:', error);
-
-      let errorMessage = 'Failed to connect wallet';
-      if (error.message.includes('USER_REJECTED')) {
-        errorMessage = 'Connection was cancelled by user';
-      } else if (error.message.includes('NO_WALLET_FOUND')) {
-        errorMessage = 'No compatible wallet app found. Please install a Solana wallet.';
-      }
-
-      Alert.alert('Connection Failed', errorMessage, [
-        { text: 'Try Again', onPress: () => setModalVisible(true) },
-        { text: 'Cancel', onPress: () => router.back() }
-      ]);
+      handleWalletError(error);
     } finally {
       setIsConnecting(false);
     }
   };
 
-  const handleBackPress = () => {
+  const handleWalletError = (error) => {
+    let title = 'Connection Failed';
+    let message = 'Failed to connect wallet. Please try again.';
+    let showRetry = true;
+
+    if (error.message.includes('USER_REJECTED')) {
+      title = 'Connection Cancelled';
+      message = 'You cancelled the wallet connection.';
+      showRetry = true;
+    } else if (error.message.includes('NO_WALLET_FOUND')) {
+      title = 'No Wallet Found';
+      message = 'Please install a Solana wallet app first.';
+      showRetry = false;
+    } else if (error.message.includes('Invalid address format')) {
+      title = 'Address Error';
+      message = 'Invalid wallet address format received.';
+      showRetry = true;
+    } else if (error.message.includes('Failed to store wallet data')) {
+      title = 'Storage Error';
+      message = 'Failed to save wallet information. Please try again.';
+      showRetry = true;
+    }
+
+    const buttons = showRetry 
+      ? [
+          { text: 'Cancel', onPress: () => router.back(), style: 'cancel' },
+          { text: 'Retry', onPress: () => setError(null) }
+        ]
+      : [{ text: 'OK', onPress: () => router.back() }];
+
+    Alert.alert(title, message, buttons);
+    setError(message);
+  };
+
+  const processVerification = async (address) => {
+    if (!qrData || !address) {
+      Alert.alert('Error', 'Missing verification data', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      console.log('Starting verification process...');
+      console.log('QR Data:', qrData);
+      console.log('Wallet Address:', address);
+
+      const response = await fetch('https://verify-henna-five.vercel.app/api/scan', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          recipientWallet: address, 
+          encryptedAsset: qrData 
+        }),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('Response data:', data);
+      } catch (parseError) {
+        console.error('Failed to parse response JSON:', parseError);
+        
+        data = {
+          success: false,
+          message: `Server returned status ${response.status} with invalid JSON`,
+          data: {
+            drugInfo: {
+              name: 'Unknown Medicine',
+              status: 'VERIFICATION_FAILED',
+              assetAddress: qrData || 'N/A'
+            },
+            errorCode: response.status,
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+
+     
+      const verificationResult = {
+        success: data.success || false,
+        message: data.message || `Verification returned status ${response.status}`,
+        data: {
+          drugInfo: {
+            name: data?.data?.drugInfo?.name || 'Unknown Medicine',
+            symbol: data?.data?.drugInfo?.symbol || 'N/A',
+            assetAddress: data?.data?.drugInfo?.assetAddress || qrData || 'N/A',
+            status: data?.data?.drugInfo?.status || 'UNKNOWN',
+            expiryDate: data?.data?.drugInfo?.expiryDate || null
+          },
+          
+          fromWallet: data?.data?.fromWallet || null,
+          toWallet: data?.data?.toWallet || address,
+          currentOwner: data?.data?.currentOwner || null,
+          expectedOwner: data?.data?.expectedOwner || null,
+          requestingWallet: data?.data?.requestingWallet || address,
+          metadata: data?.data?.metadata || {},
+          errorCode: response.status,
+          timestamp: new Date().toISOString(),
+          scanType: scanType || 'verification',
+          rawResponse: data 
+        }
+      };
+
+      console.log('Processed verification result:', verificationResult);
+
+     
+      router.replace({
+        pathname: '/verification',
+        params: { verificationData: JSON.stringify(verificationResult) },
+      });
+
+    } catch (error) {
+      console.error('Verification error:', error);
+      
+     
+      const errorResult = {
+        success: false,
+        message: 'Network or system error occurred during verification',
+        data: {
+          drugInfo: {
+            name: 'Verification Failed',
+            symbol: 'N/A',
+            assetAddress: qrData || 'N/A',
+            status: 'NETWORK_ERROR'
+          },
+          toWallet: address,
+          requestingWallet: address,
+          errorCode: 'NETWORK_ERROR',
+          errorMessage: error.message,
+          timestamp: new Date().toISOString(),
+          scanType: scanType || 'verification',
+          metadata: {}
+        }
+      };
+
+      console.log('Error result:', errorResult);
+
+      
+      router.replace({
+        pathname: '/verification-result',
+        params: { verificationData: JSON.stringify(errorResult) },
+      });
+
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowWalletModal(false);
     router.back();
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-    router.back();
+  const clearWalletAndReconnect = async () => {
+    await clearStoredWalletData();
+    setWalletAddress(null);
+    setShowWalletModal(true);
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: color.background || '#f5f5f5',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: StatusBar.currentHeight || 40,
-      paddingBottom: 20,
-      backgroundColor: color.surface || '#fff',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    backButton: {
-      marginRight: 15,
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: color.onSurface || '#000',
-      flex: 1,
-    },
-    content: {
-      flex: 1,
-      padding: 20,
-    },
-    qrDataSection: {
-      backgroundColor: color.surface || '#fff',
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 20,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: color.onSurface || '#000',
-      marginBottom: 10,
-    },
-    qrDataText: {
-      fontSize: 14,
-      color: color.onSurface || '#666',
-      backgroundColor: color.surfaceVariant || '#f0f0f0',
-      padding: 15,
-      borderRadius: 8,
-      fontFamily: 'monospace',
-    },
-    walletSection: {
-      backgroundColor: color.surface || '#fff',
-      borderRadius: 12,
-      padding: 20,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    walletAddress: {
-      fontSize: 14,
-      color: color.primary || '#007AFF',
-      backgroundColor: color.surfaceVariant || '#f0f0f0',
-      padding: 15,
-      borderRadius: 8,
-      fontFamily: 'monospace',
-      marginTop: 10,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContent: {
-      backgroundColor: '#fff',
-      borderRadius: 20,
-      padding: 30,
-      margin: 20,
-      width: width * 0.85,
-      maxWidth: 400,
-      alignItems: 'center',
-      elevation: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-    },
-    modalIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: color.primary || '#007AFF',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    modalTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#1a1a1a',
-      textAlign: 'center',
-      marginBottom: 15,
-    },
-    modalDescription: {
-      fontSize: 16,
-      color: '#666',
-      textAlign: 'center',
-      lineHeight: 24,
-      marginBottom: 30,
-    },
-    connectButton: {
-      backgroundColor: color.primary || '#007AFF',
-      borderRadius: 25,
-      paddingVertical: 15,
-      paddingHorizontal: 40,
-      minWidth: 160,
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    connectButtonText: {
-      color: '#fff',
-      fontSize: 18,
-      fontWeight: '600',
-    },
-    cancelButton: {
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-    },
-    cancelButtonText: {
-      color: '#666',
-      fontSize: 16,
-    },
-    loadingContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    loadingText: {
-      color: '#fff',
-      fontSize: 16,
-      marginLeft: 10,
-    },
-  });
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.dark.accent} />
+          <Text style={styles.loadingText}>Initializing...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={color.surface || '#fff'} />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-          <Ionicons name="arrow-back" size={24} color={color.onSurface || '#000'} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Medicine Verification</Text>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        {/* QR Data Section */}
-        <View style={styles.qrDataSection}>
-          <Text style={styles.sectionTitle}>Scanned QR Code</Text>
-          <Text style={styles.qrDataText}>{qrData || 'No QR data available'}</Text>
-          <Text style={{ 
-            fontSize: 12, 
-            color: color.onSurface || '#999', 
-            marginTop: 10 
-          }}>
-            Scan Type: {scanType} | Timestamp: {new Date(parseInt(timestamp)).toLocaleString()}
-          </Text>
-        </View>
-
-        {/* Wallet Section */}
-        {walletConnected && walletAddress && (
-          <View style={styles.walletSection}>
-            <Text style={styles.sectionTitle}>Connected Wallet</Text>
-            <Text style={styles.walletAddress}>{walletAddress}</Text>
-          </View>
-        )}
-      </View>
-
       {/* Wallet Connection Modal */}
       <Modal
-        animationType="fade"
+        visible={showWalletModal}
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
+        animationType="fade"
+        onRequestClose={handleModalClose}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View style={styles.modalIcon}>
-              <Ionicons name="wallet-outline" size={40} color="#fff" />
-            </View>
-            
+            <MaterialIcons name="account-balance-wallet" size={50} color={Colors.dark.accent} />
             <Text style={styles.modalTitle}>Connect Your Wallet</Text>
-            
             <Text style={styles.modalDescription}>
-              To verify your drug data on the Solana blockchain, please connect your Solana wallet.
+              To verify your medicine, please connect your Solana wallet. This ensures secure verification and minting of your authenticity certificate.
             </Text>
+            
+            {error && (
+              <View style={styles.errorContainer}>
+                <MaterialIcons name="error" size={20} color={Colors.dark.foreground} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
 
-            <TouchableOpacity 
-              style={styles.connectButton}
-              onPress={connectWallet}
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.loadingText}>Connecting...</Text>
-                </View>
-              ) : (
-                <Text style={styles.connectButtonText}>Connect Wallet</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.cancelButton}
-              onPress={closeModal}
-              disabled={isConnecting}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.secondaryButton} 
+                onPress={handleModalClose}
+                disabled={isConnecting}
+              >
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.primaryButton, isConnecting && styles.disabledButton]} 
+                onPress={connectWallet}
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <>
+                    <ActivityIndicator size="small" color={Colors.dark['primary-foreground']} />
+                    <Text style={styles.primaryButtonText}>Connecting...</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="link" size={18} color={Colors.dark['primary-foreground']} />
+                    <Text style={styles.primaryButtonText}>Connect</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
+
+      {/* Main Content */}
+      <View style={styles.centered}>
+        <MaterialIcons name="shield" size={60} color={Colors.dark.accent} />
+        <Text style={styles.title}>Medicine Verification</Text>
+        
+        {walletAddress && (
+          <View style={styles.walletInfo}>
+            <MaterialIcons name="check-circle" size={20} color={Colors.dark.success} />
+            <Text style={styles.walletText}>
+              Wallet Connected: {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+            </Text>
+          </View>
+        )}
+
+        {isProcessing ? (
+          <View style={styles.processingContainer}>
+            <ActivityIndicator size="large" color={Colors.dark.accent} />
+            <Text style={styles.subtitle}>Processing verification...</Text>
+            <Text style={styles.smallText}>Please wait while we verify your medicine</Text>
+          </View>
+        ) : (
+          <Text style={styles.subtitle}>
+            {walletAddress 
+              ? "Verification complete! Redirecting..." 
+              : "Please connect your wallet to continue"
+            }
+          </Text>
+        )}
+
+        {error && !showWalletModal && (
+          <View style={styles.errorContainer}>
+            <MaterialIcons name="error" size={20} color={Colors.dark.destructive} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {walletAddress && !isProcessing && (
+          <TouchableOpacity 
+            style={styles.secondaryButton} 
+            onPress={clearWalletAndReconnect}
+          >
+            <Text style={styles.secondaryButtonText}>Use Different Wallet</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
-};
+}
 
-export default MintScreen;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.dark.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  centered: {
+    width: '100%',
+    backgroundColor: Colors.dark.card,
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.dark.foreground,
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: Colors.dark['muted-foreground'],
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  smallText: {
+    fontSize: 14,
+    color: Colors.dark['muted-foreground'],
+    textAlign: 'center',
+    marginTop: 10,
+    opacity: 0.8,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.dark['muted-foreground'],
+    marginTop: 15,
+  },
+  walletInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.success + '20',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  walletText: {
+    color:Colors.dark['muted-foreground'],
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  processingContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.destructive + '20',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+    maxWidth: '100%',
+  },
+  errorText: {
+    color: Colors.dark.foreground,
+    marginLeft: 8,
+    fontSize: 14,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.dark.foreground,
+    marginTop: 15,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: Colors.dark['muted-foreground'],
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+    marginTop: 10,
+  },
+  primaryButton: {
+    backgroundColor: Colors.dark.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  primaryButtonText: {
+    color: Colors.dark['primary-foreground'],
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: Colors.dark.foreground,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+});

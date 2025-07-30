@@ -78,8 +78,11 @@ export default function RootLayout() {
   if (showOnboarding) {
     return (
       <PaperProvider theme={paperTheme}>
+      
         <Onboarding onDone={handleOnboardingDone} />
+    
       </PaperProvider>
+
     );
   }
 

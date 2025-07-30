@@ -1,8 +1,8 @@
-import { AntDesign, Feather } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 export const icons = {
-    index: (props)=> <AntDesign name="home" size={20} {...props} />,
-    settings: (props)=> <Feather name="compass" size={20} {...props} />,
-    create: (props)=> <AntDesign name="pluscircleo" size={26} {...props} />,
-    profile: (props)=> <AntDesign name="user" size={26} {...props} />,
+    index: (props)=> <AntDesign name="scan1" size={24} {...props} />,
+    profile: (props)=> <MaterialIcons name="person" size={24} {...props} />,
+    history: (props)=> < MaterialIcons name="history-toggle-off" size={24} {...props} />,
+    alert: (props)=> <Ionicons name="notifications" size={24} {...props} />,
 }

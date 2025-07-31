@@ -23,22 +23,25 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState(null); // null, authentic, counterfeit, owned
+  const [activeFilter, setActiveFilter] = useState(null); 
+
 
   useFocusEffect(
-    useCallback(() => {
-      loadScanHistory();
-    }, [])
-  );
+  useCallback(() => {
+    
+    loadScanHistory();
+  }, [activeFilter, searchQuery])
+);
+
 
   const loadScanHistory = async () => {
     try {
       const storedScans = await AsyncStorage.getItem('scanHistory');
       if (storedScans) {
         const scans = JSON.parse(storedScans);
-        const uniqueScans = removeDuplicateScans(scans);
-        setScanHistory(uniqueScans);
-        applyFilters(uniqueScans, activeFilter, searchQuery);
+        
+        setScanHistory(scans);
+        applyFilters(scans, activeFilter, searchQuery);
       } else {
         setScanHistory([]);
         setFilteredHistory([]);
@@ -51,25 +54,11 @@ export default function HistoryScreen() {
     setLoading(false);
   };
 
-  const removeDuplicateScans = (scans) => {
-    const uniqueScans = [];
-    const seenAssets = new Set();
-
-    for (const scan of scans) {
-      const assetId = scan.drugInfo?.assetAddress || scan.drugInfo?.serialNumber || scan.id;
-      if (!seenAssets.has(assetId)) {
-        seenAssets.add(assetId);
-        uniqueScans.push(scan);
-      }
-    }
-
-    return uniqueScans;
-  };
 
   const applyFilters = (scans, filter, search) => {
     let filtered = [...scans];
 
-    // Apply status filter
+   
     if (filter === 'authentic') {
       filtered = filtered.filter(scan => scan.status === 'AUTHENTIC');
     } else if (filter === 'counterfeit') {
@@ -80,9 +69,7 @@ export default function HistoryScreen() {
     } else if (filter === 'expired') {
       filtered = filtered.filter(scan => scan.status === 'EXPIRED');
     }
-    // If filter is null, show all scans (no filtering)
-
-    // Apply search filter
+    
     if (search.trim()) {
       const searchLower = search.toLowerCase();
       filtered = filtered.filter(scan => {
@@ -210,7 +197,7 @@ export default function HistoryScreen() {
     const dosage = item.drugInfo?.dosage || getAttributeValue(item.metadata?.attributes, 'Dosage') || '';
     const form = item.drugInfo?.form || getAttributeValue(item.metadata?.attributes, 'Form') || '';
     const imageUrl = item.metadata?.image || 'https://via.placeholder.com/60';
-    const serialNumber = item.drugInfo?.serialNumber || '';
+    const serialNumber = (drugName.match(/SN-\s*(\d+)/) || [])[1] || '';
     const scannedDate = new Date(item.timestamp).toLocaleDateString();
 
     return (
@@ -264,7 +251,7 @@ export default function HistoryScreen() {
             </View>
           </View>
 
-          {/* Chevron */}
+          
           <MaterialIcons 
             name="chevron-right" 
             size={24} 

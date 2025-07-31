@@ -3,14 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Clipboard,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    ToastAndroid,
-    TouchableOpacity,
-    View
+  Clipboard,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Colors } from '../constants/color';
 
@@ -66,8 +66,8 @@ export default function VerificationResultScreen() {
     try {
       const scanResult = {
         id: Date.now().toString(),
-        timestamp: new Date().toISOString(), // Always use current time for scan
-        scannedAt: new Date().toLocaleString(), // Human readable time
+        timestamp: new Date().toISOString(), 
+        scannedAt: new Date().toLocaleString(),
         success: data.success,
         message: data.message,
         drugInfo: data.data?.drugInfo || {},
@@ -81,7 +81,7 @@ export default function VerificationResultScreen() {
       const existingScans = await AsyncStorage.getItem('scanHistory');
       const scanHistory = existingScans ? JSON.parse(existingScans) : [];
       
-      // Add new scan to beginning and limit to 100 items
+      
       scanHistory.unshift(scanResult);
       const trimmedHistory = scanHistory.slice(0, 100);
       
@@ -205,7 +205,7 @@ export default function VerificationResultScreen() {
   const renderInfoRow = (label, value, copyable = false) => {
     if (!value || value === 'N/A') return null;
     
-    // Handle objects and arrays by converting to string
+    
     let stringValue = value;
     if (typeof value === 'object') {
       if (Array.isArray(value)) {
@@ -325,7 +325,7 @@ export default function VerificationResultScreen() {
         </View>
       </View>
 
-      {/* Description - Full width section */}
+      
       {metadata.description && renderDescription(metadata.description)}
 
       {/* Security Alert */}

@@ -100,6 +100,12 @@ export default function RootLayout() {
               headerShown: false,
             }}
           />
+           <Stack.Screen
+            name="/history-details"
+            options={{
+              headerShown: false,
+            }}
+          />
           
         </Stack>
       </ThemeProvider>

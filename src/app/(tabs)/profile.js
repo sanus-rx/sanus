@@ -195,7 +195,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.walletCard}>
-        {/* Header with Wallet Icon and Connection Badge */}
+      
         <View style={styles.header}>
           <View style={styles.walletIconContainer}>
             <View style={styles.walletIcon}>

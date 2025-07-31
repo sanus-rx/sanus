@@ -1,24 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Colors } from '../constants/color';
+import { Colors } from '../../constants/color';
 
 const RecentScans = () => {
   const [recentScans, setRecentScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
+ 
   useEffect(() => {
     loadRecentScans();
   }, []);
+
+ 
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentScans();
+    }, [])
+  );
 
   const loadRecentScans = async () => {
     try {
@@ -26,7 +37,7 @@ const RecentScans = () => {
       const scanHistory = await AsyncStorage.getItem('scanHistory');
       if (scanHistory) {
         const scans = JSON.parse(scanHistory);
-        // Get last 15 scans and sort by timestamp (most recent first)
+       
         const recentScansData = scans
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
           .slice(0, 15);
@@ -36,8 +47,14 @@ const RecentScans = () => {
       console.error('Error loading recent scans:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadRecentScans();
+  }, []);
 
   const getStatusIcon = (status) => {
     const statusMap = {
@@ -53,11 +70,11 @@ const RecentScans = () => {
 
   const getStatusText = (status) => {
     const statusTextMap = {
-      'AUTHENTIC': 'Verified ✅',
+      'AUTHENTIC': 'Verified ',
       'ALREADY_OWNED': 'Already Scanned',
-      'EXPIRED': 'Expired ⏰',
-      'COUNTERFEIT_SUSPECTED': 'Counterfeit ⚠️',
-      'TAMPERED_QR': 'Tampered 🚨'
+      'EXPIRED': 'Expired ',
+      'COUNTERFEIT_SUSPECTED': 'Counterfeit ',
+      'TAMPERED_QR': 'Tampered '
     };
     
     return statusTextMap[status] || 'Unknown';
@@ -109,9 +126,14 @@ const RecentScans = () => {
         onPress={() => handleScanPress(item)}
       >
         <View style={styles.scanCardContent}>
-          <Text style={styles.scanCardText} numberOfLines={1}>
-            {drugName} • {scanDate}
-          </Text>
+          <View style={styles.drugInfoContainer}>
+            <Text style={styles.scanCardText} numberOfLines={1}>
+              {drugName}
+            </Text>
+            <Text style={styles.scanDateText}>
+              {scanDate}
+            </Text>
+          </View>
           <View style={styles.statusContainer}>
             <Ionicons 
               name={statusIcon.name} 
@@ -156,6 +178,14 @@ const RecentScans = () => {
           showsVerticalScrollIndicator={false}
           scrollEnabled={true}
           style={styles.flatList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.dark.accent]}
+              tintColor={Colors.dark.accent}
+            />
+          }
         />
       )}
     </View>
@@ -166,6 +196,7 @@ const styles = StyleSheet.create({
   recentScans: {
     flex: 1,
     marginTop: 20,
+    paddingHorizontal: 10,
   },
   recentTitle: {
     fontSize: 18,
@@ -184,17 +215,21 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.border,
   },
   scanCardContent: {
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    padding: 12,
+  },
+  drugInfoContainer: {
+    marginBottom: 8,
   },
   scanCardText: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.dark.foreground,
-    fontWeight: '500',
-    flex: 1,
-    marginRight: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  scanDateText: {
+    fontSize: 13,
+    color: Colors.dark['muted-foreground'],
+    fontWeight: '400',
   },
   statusContainer: {
     flexDirection: 'row',

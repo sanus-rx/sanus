@@ -1,16 +1,17 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    Clipboard,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    ToastAndroid,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Clipboard,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Colors } from '../constants/color';
 
@@ -19,6 +20,7 @@ const { width } = Dimensions.get('window');
 export default function HistoryDetailsScreen() {
   const params = useLocalSearchParams();
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [scanData, setScanData] = useState(() => {
     try {
       return JSON.parse(params.scanData);
@@ -28,9 +30,20 @@ export default function HistoryDetailsScreen() {
     }
   });
 
-  if (!scanData) {
+  // Add loading delay effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  
+  if (isLoading) {
     return (
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
@@ -39,7 +52,22 @@ export default function HistoryDetailsScreen() {
             <MaterialIcons name="arrow-back" size={24} color={Colors.dark.foreground} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Scan Details</Text>
+          <View style={styles.headerSpacer} />
         </View>
+
+       
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.dark.accent} />
+          <Text style={styles.loadingText}>Loading scan details...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!scanData) {
+    return (
+      <View style={styles.container}>
+        
         <View style={styles.centered}>
           <MaterialIcons name="error" size={50} color={Colors.dark.destructive} />
           <Text style={styles.errorText}>Failed to load scan details</Text>
@@ -214,7 +242,7 @@ export default function HistoryDetailsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Drug Image & Status Header */}
+        
         <View style={[
           styles.imageStatusHeader,
           { 
@@ -399,8 +427,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 40,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
@@ -417,6 +445,18 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.dark['muted-foreground'],
+    marginTop: 16,
+    textAlign: 'center',
   },
   scrollContainer: {
     flex: 1,

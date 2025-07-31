@@ -7,12 +7,12 @@ import {
   Modal,
   Platform,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import RecentScans from '../../components/scan/recent';
 import { Colors } from '../../constants/color';
 
 const ScanScreen = () => {
@@ -57,42 +57,36 @@ const ScanScreen = () => {
 
   return (
     <>
-      
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.hero}>
-            <Text style={styles.title}>Sanus</Text>
-            <Text style={styles.subtitle}>Verify medicine authenticity</Text>
-            <Text style={styles.tagline}>Powered by Solana Blockchain</Text>
+        <View style={styles.content}>
+        
+          <View style={styles.header}>
+            <View style={styles.hero}>
+              <Text style={styles.title}>Sanus</Text>
+              <Text style={styles.subtitle}>Verify medicine authenticity</Text>
+              <Text style={styles.tagline}>Powered by Solana Blockchain</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={handleScanPress}
+              activeOpacity={0.9}
+            >
+              <View style={styles.scanButtonContent}>
+                <Ionicons
+                  name="scan"
+                  size={24}
+                  color={Colors.light['primary-foreground']}
+                  style={styles.icon}
+                />
+                <Text style={styles.scanText}>Scan Medicine</Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.scanButton}
-            onPress={handleScanPress}
-            activeOpacity={0.9}
-          >
-            <View style={styles.scanButtonContent}>
-              <Ionicons
-                name="scan"
-                size={24}
-                color={Colors.light['primary-foreground']}
-                style={styles.icon}
-              />
-              <Text style={styles.scanText}>Scan Medicine</Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.recentScans}>
-            <Text style={styles.recentTitle}>Recent Scans</Text>
-            {/* Replace this view with FlatList from your scan data */}
-            <View style={styles.scanCard}>
-              <Text style={styles.scanCardText}>Paracetamol 500mg • 27 Jul</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center',  }}>
-              <Ionicons name = "checkmark-circle" size={16}color="green"  /><Text style={styles.scanCardStatus}> Verified</Text>
-            </View>
-            </View>
-          </View>
-        </ScrollView>
+          
+          <RecentScans />
+        </View>
 
         {/* Modal */}
         <Modal
@@ -138,14 +132,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
-  scrollContainer: {
-    padding: 20,
+  content: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+    paddingBottom: 20,
   },
   hero: {
     alignItems: 'center',
     marginBottom: 32,
-    marginTop: Platform.OS === 'android' ? 40 : 20,
   },
   title: {
     fontSize: 28,
@@ -170,7 +169,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
   },
   scanButtonContent: {
     flexDirection: 'row',
@@ -185,33 +184,7 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: 5,
   },
-  recentScans: {
-    marginTop: 10,
-  },
-  recentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.dark.foreground,
-    marginBottom: 12,
-  },
-  scanCard: {
-    backgroundColor: Colors.dark.card,
-    padding: 14,  
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  scanCardText: {
-    color: Colors.dark['card-foreground'],
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  scanCardStatus: {
-    fontSize: 12,
-    
-    color: Colors.dark['muted-foreground'],
-  },
-  // Modal styles
+  
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

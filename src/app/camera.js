@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import { Colors } from '../constants/color';
 const { width, height } = Dimensions.get('window');
 
 const CameraScreen = () => {
@@ -120,7 +121,7 @@ const CameraScreen = () => {
       position: 'absolute',
       width: 30,
       height: 30,
-      borderColor: color.primary,
+      borderColor: Colors.dark.primary,
       borderWidth: 3,
     },
     cornerTopLeft: {

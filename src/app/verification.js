@@ -77,6 +77,7 @@ export default function VerificationResultScreen() {
         errorCode: data.data?.errorCode,
         metadata: data.data?.metadata || {}
       };
+      
 
       const existingScans = await AsyncStorage.getItem('scanHistory');
       const scanHistory = existingScans ? JSON.parse(existingScans) : [];

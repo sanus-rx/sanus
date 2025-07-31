@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import { useTheme } from 'react-native-paper';
+import { Colors } from '../../constants/color';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,28 +19,28 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: Colors.dark['muted-foreground'],
     textAlign: 'center',
     marginBottom: 20,
   },
   text: {
     fontSize: 16,
-    color: colors.text,
+    color: Colors.dark['muted-foreground'],
     textAlign: 'center',
     lineHeight: 24,
   },
   activeDot: {
-    backgroundColor: colors.onSurfaceVariant,
+    backgroundColor:Colors.dark.primary,
     width: 10,
     height: 10,
   },
   dot: {
-    backgroundColor: colors.onBackground,
+    backgroundColor: Colors.dark['muted-foreground'],
     width: 8,
     height: 8,
   },
   buttonText: {
-    color: colors.primary,
+    color: Colors.dark.primary,
     fontSize: 16,
     fontWeight: 'bold',
     padding: 10,
@@ -53,30 +54,30 @@ const styles = StyleSheet.create({
   const slides = [
     {
       key: 'slide1',
-      title: 'Verify Your Medicine. Protect Your Health',
-      text: 'Counterfeit medicines are a serious threat. Sanus uses solana blockchain technology to help you easily confirm the authenticity of your medication faster and and more securely than ever before.',
-      backgroundColor: colors.background,
+      title: 'Verify Your Medicine, Protect Your Health',
+      text: 'Counterfeit medicines are a serious threat. Sanus uses solana blockchain technology to help you easily confirm the authenticity of your medication faster and  more securely than ever before.',
+      backgroundColor: Colors.dark.background,
       image: require('../../../assets/images/logo.webp'), 
     },
     {
       key: 'slide2',
       title: 'Simple Scan, Instant Peace of Mind',
       text: "Simply scan the unique QR code on your medicine packaging. We'll instantly connect to the Solana blockchain to verify its origin and ensure it hasn't been tampered with or used before.",
-      backgroundColor: colors.background,
+      backgroundColor: Colors.dark.background,
       image: require('../../../assets/images/4137379.jpg'),
     },
     {
       key: 'slide3',
       title: 'Your Health Safety, Secured by Blockchain.',
       text: 'You\'re all set! Let\'s begin your wellness journey together.',
-      backgroundColor: colors.background,
+      backgroundColor: Colors.dark.background,
       image: require('../../../assets/images/Pi7_cropper.png'),
     },
     {
       key: 'slide4',
       title: 'Ready to Verify',
       text: "To get started, we'll need access to your camera to scan QR codes. This is essential for verifying your medicine.",
-      backgroundColor: colors.background,
+      backgroundColor: Colors.dark.background,
       image: require('../../../assets/images/camera.webp'),
     }
   ];
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
   };
 
   return (
+    <View style={{ flex: 1, backgroundColor: colors.background,paddingBottom: 50 }}>
     <AppIntroSlider
       renderItem={renderSlide}
       data={slides}
@@ -105,5 +107,6 @@ const styles = StyleSheet.create({
       renderDoneButton={() => <Text style={styles.buttonText}>Done</Text>}
       renderSkipButton={() => <Text style={styles.buttonText}>Skip</Text>}
     />
+    </View>
   );
 }

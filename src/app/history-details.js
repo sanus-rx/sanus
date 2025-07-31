@@ -213,8 +213,9 @@ export default function HistoryDetailsScreen() {
       </View>
     );
   };
-
+  
   const drugInfo = scanData.drugInfo || {};
+  console.log(scanData)
   const metadata = scanData.metadata || {};
   const attributes = metadata.attributes || [];
   const statusInfo = getStatusInfo(scanData.status);
@@ -298,6 +299,7 @@ export default function HistoryDetailsScreen() {
             {renderInfoRow('Lot Number', drugInfo.lotNumber)}
             {renderInfoRow('NDC Number', drugInfo.ndcNumber)}
             {renderInfoRow('Asset Address', drugInfo.assetAddress, true)}
+            {renderInfoRow('Wallet Address', scanData.walletAddress, true)}
           </View>
         </View>
 

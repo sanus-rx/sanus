@@ -10,8 +10,7 @@ import {
 
 import {
   DarkTheme as NavigationDarkTheme,
-  DefaultTheme as NavigationDefaultTheme,
-  ThemeProvider,
+  DefaultTheme as NavigationDefaultTheme
 } from "@react-navigation/native";
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -77,18 +76,18 @@ export default function RootLayout() {
 
   if (showOnboarding) {
     return (
-      <PaperProvider theme={paperTheme}>
+      // <PaperProvider theme={paperTheme}>
       
         <Onboarding onDone={handleOnboardingDone} />
     
-      </PaperProvider>
+      // </PaperProvider>
 
     );
   }
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <ThemeProvider value={paperTheme}>
+    // <PaperProvider theme={paperTheme}>
+    //   <ThemeProvider value={paperTheme}>
          <Stack
       screenOptions={{
         headerShown: false, 
@@ -108,7 +107,7 @@ export default function RootLayout() {
           />
           
         </Stack>
-      </ThemeProvider>
-    </PaperProvider>
+    //   </ThemeProvider>
+    // </PaperProvider>
   );
 }

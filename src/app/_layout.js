@@ -16,8 +16,10 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import merge from "deepmerge";
 
+import * as SystemUI from 'expo-system-ui';
 import Onboarding from '../components/onboarding/onboarding';
 import { Colors } from "../constants/color";
+
 
 const customDarkTheme = { ...MD3DarkTheme, colors: Colors.dark };
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
@@ -40,7 +42,14 @@ export default function RootLayout() {
   useEffect(() => {
     checkFirstLaunch();
   }, []);
+useEffect(() => {
+    
+      
+      SystemUI.setBackgroundColorAsync('black'); // or 'transparent'
 
+      
+    
+  }, []);
   const checkFirstLaunch = async () => {
     try {
       const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
@@ -91,6 +100,7 @@ export default function RootLayout() {
          <Stack
       screenOptions={{
         headerShown: false, 
+        navigationBarColor:"#000000",
       }}
     >
           <Stack.Screen

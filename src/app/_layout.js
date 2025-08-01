@@ -100,7 +100,7 @@ export default function RootLayout() {
             }}
           />
            <Stack.Screen
-            name="/history-details"
+            name="history-details"
             options={{
               headerShown: false,
             }}

@@ -72,7 +72,7 @@ export default function VerificationResultScreen() {
         message: data.message,
         drugInfo: data.data?.drugInfo || {},
         status: data.data?.drugInfo?.status || 'UNKNOWN',
-        walletAddress: data.data?.requestingWallet || data.data?.toWallet,
+        walletAddress: data.data?.toWallet,
         transactionSignature: data.data?.transactionSignature,
         errorCode: data.data?.errorCode,
         metadata: data.data?.metadata || {}
@@ -375,7 +375,8 @@ const styles = StyleSheet.create({
   containers: {
     flex: 1,
     backgroundColor: Colors.dark.background,
-    paddingTop: 30
+    paddingTop: 30,
+    paddingBottom: 20,
   },
   scrollContent: {
     padding: 20,

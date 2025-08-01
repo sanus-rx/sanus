@@ -227,16 +227,7 @@ export default function HistoryDetailsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={Colors.dark.foreground} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan Details</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+     
 
       <ScrollView 
         style={styles.scrollContainer}
@@ -424,12 +415,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
+    paddingTop:40
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 40,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
@@ -443,10 +435,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: Colors.dark.foreground,
-    flex: 1,
+    
   },
   headerSpacer: {
-    width: 40,
+    width: 0
   },
   loadingContainer: {
     flex: 1,

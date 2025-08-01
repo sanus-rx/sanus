@@ -201,8 +201,8 @@ export default function MintScreen() {
         }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
+      
+      
 
       
       let data;
@@ -241,7 +241,7 @@ export default function MintScreen() {
           },
           
           fromWallet: data?.data?.fromWallet || null,
-          toWallet: data?.data?.toWallet || address,
+          toWallet: data?.data?.toWallet || null,
           currentOwner: data?.data?.currentOwner || null,
           expectedOwner: data?.data?.expectedOwner || null,
           requestingWallet: data?.data?.requestingWallet || address,
@@ -431,6 +431,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 40,
   },
   centered: {
     width: '100%',

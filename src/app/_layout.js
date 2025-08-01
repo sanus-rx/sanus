@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useColorScheme, View } from 'react-native';
@@ -5,21 +6,19 @@ import {
   adaptNavigationTheme,
   MD3DarkTheme,
   MD3LightTheme,
-  PaperProvider,
+  PaperProvider
 } from "react-native-paper";
 
 import {
   DarkTheme as NavigationDarkTheme,
-  DefaultTheme as NavigationDefaultTheme
+  DefaultTheme as NavigationDefaultTheme,
+  ThemeProvider
 } from "@react-navigation/native";
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import merge from "deepmerge";
 
-import * as SystemUI from 'expo-system-ui';
 import Onboarding from '../components/onboarding/onboarding';
 import { Colors } from "../constants/color";
-
 
 const customDarkTheme = { ...MD3DarkTheme, colors: Colors.dark };
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
@@ -42,14 +41,7 @@ export default function RootLayout() {
   useEffect(() => {
     checkFirstLaunch();
   }, []);
-useEffect(() => {
-    
-      
-      SystemUI.setBackgroundColorAsync('black'); // or 'transparent'
 
-      
-    
-  }, []);
   const checkFirstLaunch = async () => {
     try {
       const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
@@ -85,39 +77,37 @@ useEffect(() => {
 
   if (showOnboarding) {
     return (
-      // <PaperProvider theme={paperTheme}>
-      
-        <Onboarding onDone={handleOnboardingDone} />
-    
-      // </PaperProvider>
-
+      <PaperProvider theme={paperTheme}>
+        <ThemeProvider value={paperTheme}>
+          <Onboarding onDone={handleOnboardingDone} />
+        </ThemeProvider>
+      </PaperProvider>
     );
   }
 
   return (
-    // <PaperProvider theme={paperTheme}>
-    //   <ThemeProvider value={paperTheme}>
-         <Stack
-      screenOptions={{
-        headerShown: false, 
-        navigationBarColor:"#000000",
-      }}
-    >
+    <PaperProvider theme={paperTheme}>
+      <ThemeProvider value={paperTheme}>
+        <Stack
+          screenOptions={{
+            headerShown: false, 
+            navigationBarColor: "#000000",
+          }}
+        >
           <Stack.Screen
             name="(tabs)"
             options={{
               headerShown: false,
             }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="history-details"
             options={{
               headerShown: false,
             }}
           />
-          
         </Stack>
-    //   </ThemeProvider>
-    // </PaperProvider>
+      </ThemeProvider>
+    </PaperProvider>
   );
 }

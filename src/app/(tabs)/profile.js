@@ -416,8 +416,8 @@ const styles = StyleSheet.create({
   },
   
   logo: {
-    width: '500%',
-    height: '500%',
+    width: '800%',
+    height: '700%',
   },
   
   addressSection: {

@@ -15,6 +15,7 @@
     "preview": {
       "extends": "base",
       "distribution": "internal"
+      
     },
     "production": {
       "extends": "base",

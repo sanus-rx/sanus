@@ -1,13 +1,13 @@
 import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Colors } from '../../constants/color';
 
@@ -25,7 +25,7 @@ export default function Onboarding({ onDone }) {
       title: 'Verify Your Medicine, Protect Your Health',
       text: 'Counterfeit medicines are a serious threat. Sanus uses solana blockchain technology to help you easily confirm the authenticity of your medication faster and more securely than ever before.',
       backgroundColor: Colors.dark.background,
-      image: require('../../../assets/images/logo.webp'),
+      image: require('../../../assets/images/logo_alt.webp'),
     },
     {
       key: 'slide2',

@@ -39,7 +39,7 @@ _Mint sample medicine NFTs to test the verification system_
 
 ### 🎬 Demo Video
 
-**[📹 Watch 2-Minute Demo](https://your-demo-video-link.com)**
+**[📹 Watch 2-Minute Demo](https://youtube.com/shorts/eDebnLkW4tE?si=1rrpxVKvDKrZUML3)**
 
 ## 💡 How It Works
 
